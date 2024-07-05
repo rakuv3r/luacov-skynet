@@ -9,50 +9,66 @@
 <br>
 
 ## 概述
-`LuaCov-Skynet`是针对`Skynet`框架定制的覆盖率检测库。
-该项目基于 [LuaCov](https://github.com/lunarmodules/luacov) 的拓展。其中`lcov`的生成格式来源于 [luacov-reporter-lcov](https://github.com/daurnimator/luacov-reporter-lcov)。
+`LuaCov-Skynet`是专为`Skynet`框架定制的覆盖率分析库。
 
-由于`LuaCov`本身是线程不安全的，所以每一个`actor`分别输出不同的文件。文件的后缀使用`.actor.{skynet.self()}`来拼接。
-生成的原生覆盖率结果转换为`lcov`格式，通过 [lcov](https://man.archlinux.org/man/lcov.1.en) 命令进行合多`actor`的结果。然后通过 [diff-cover](https://github.com/Bachmann1234/diff_cover) 进行增量覆盖率以及页面生成。
+该项目是 [LuaCov](https://github.com/lunarmodules/luacov) 的扩展。其中`lcov`格式的转换程序源自 [luacov-reporter-lcov](https://github.com/daurnimator/luacov-reporter-lcov)。
+
+`LuaCov`本身不支持多线程安全，每个`actor`分别输出不同的文件。文件的后缀使用`.actor.{skynet.self()}`来拼接。
+
+覆盖率结果以`lcov`格式输出，可以通过 [lcov](https://man.archlinux.org/man/lcov.1.en) 命令合并多个`actor`的结果。然后使用 [diff-cover](https://github.com/Bachmann1234/diff_cover) 进行增量覆盖率和页面生成。
 
 ## 下载安装
-直接将`git`项目`clone`至项目`package.path`任意目录下即可。
-为了提高检测文件的效率，相关方法调用的是`src/fileutil.c`生成的`so`库，针对项目的环境进行编译即可。也需要放在项目`package.path`任意目录下。
+1. 克隆项目后，编译`src/fileutil.c`生成`fileutil.so`库;
+2. 将`src/bin/luacov`复制到系统的任意可执行路径;
+3. 将`src/luacov`和`fileutil.so`复制到项目的`package.path`中的任意路径。
+
+_`fileutil.so`库用于提高文件检测的效率。_
 
 ## 使用说明
-### step.1 导入模块
-所有需要检测覆盖率的`lua`代码开头增加
+### 第一步: 导入模块
+在所有需要检测覆盖率的Lua代码开头添加:
 ```lua
 require("luacov.tick")
 ```
 
-### step.2 生成原始文件
-指定生成原始文件的文件标识名。
+### 第二步: 生成原始覆盖率文件
+覆盖率数据在内存中，通过创建文件进行跨进程通信。
+
+指定生成原始文件的文件标识名:
 ```lua
 -- defaults.lua
 report_lock_file = "luacov.report"
 ```
-在项目主目录下`touch`即可。
-对应的`reset`执行结果的文件标识名。
+在项目主目录下执行以下命令:
+```shell
+touch luacov.report
+```
+
+要重置执行结果的文件标识名:
 ```lua
 -- defaults.lua
 result_report_lock_file = "luacov.report.reset"
 ```
-`touch`后删除即可。
+创建后立即删除即可。
 
-### step.3 转换为 lcov 格式
+### 第三步：转换为 lcov 格式
+执行以下命令自动在当前目录下生成`lcov`格式的文件:
 ```shell
 luacov -r lcov -s luacov.stats.out.actor.1
 ```
-会自动在当前目录下生成`luacov.report.out.actor.1`的`lcov`格式的文件。
+其中，.actor.是固定的，luacov.report.out取自default.lua的reportfile配置。
 
-### setp.4 合并多 actor 的 lcov 文件
+### 合并多个 actor 的 lcov 文件
+使用以下命令合并多个`actor`的`lcov`文件:
 ```shell
 lcov -a luacov.stats.out.actor.1 -a luacov.stats.out.actor.2 -o luacov.report.out.lcov
 ```
+创建`$report_lock_file`后，必须创建`$luacov.report.reset`来重置状态。由于代码执行是事件驱动的，无法保证创建`$report_lock_file`文件后立即执行每个`actor`的代码。为了准确获取`100%`的覆盖率，业务方需要提供一个基于`Skynet`可以调用所有`actor`的方法。
 
-创建`report_lock_file`后必须创建`luacov.report.reset`才能重置状态。
-由于代码执行都是事件驱动的，所以没办法保证创建`report_lock_file`文件后就一定会有代码逻辑执行了每个`acotr`。为了保证覆盖率`100%`准确，业务方需要配合提供一个基于`skynet`可以调用所有`actor`的方法。
+
+## 执行流程
+<img src="./docs/tick_process.png" width="299"  alt=""/>
+
 
 ## 拓展
 非`skynet`项目可以把`skynet.self()`替换成获取对应的进程`id`等唯一标识即可应用。
