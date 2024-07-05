@@ -67,7 +67,7 @@ lcov -a luacov.stats.out.actor.1 -a luacov.stats.out.actor.2 -o luacov.report.ou
 
 
 ## 执行流程
-<img src="./docs/tick_process.png" width="299"  alt=""/>
+<img src="./docs/tick-process.png" width="303"  alt=""/>
 
 
 ## 拓展
