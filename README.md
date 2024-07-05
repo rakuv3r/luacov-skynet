@@ -1,188 +1,58 @@
 <div align="center">
-    <h1>LuaCov</h1>
-    <img src="./docs/logo/luacov-144x144.png" width="144" />
+    <h1>LuaCov - Skynet</h1>
+    <img src="./docs/logo/luacov-skynet.png" width="487"  alt=""/>
     <p align="center">
-        Coverage analyzer for Lua
+        Coverage analyzer for Skynet
     </p>
 </div>
 
 <br>
 
-## Status
-[![Unix build](https://img.shields.io/github/actions/workflow/status/lunarmodules/luacov/unix_build.yml?branch=master&label=Unix%20build&logo=linux)](https://github.com/lunarmodules/luacov/actions/workflows/unix_build.yml)
-[![Windows build](https://ci.appveyor.com/api/projects/status/nwlc6603cva412ub?svg=true)](https://ci.appveyor.com/project/hishamhm/luacov)
-[![Lint](https://github.com/lunarmodules/luacov/workflows/Lint/badge.svg)](https://github.com/lunarmodules/luacov/actions/workflows/lint.yml)
-[![SemVer](https://img.shields.io/github/v/tag/lunarmodules/luacov?color=brightgreen&label=SemVer&logo=semver&sort=semver)](CHANGELOG.md)
+## 概述
+`LuaCov-Skynet`是针对`Skynet`框架定制的覆盖率检测库。
+该项目基于 [LuaCov](https://github.com/lunarmodules/luacov) 的拓展。其中`lcov`的生成格式来源于 [luacov-reporter-lcov](https://github.com/daurnimator/luacov-reporter-lcov)。
 
-## Overview
+由于`LuaCov`本身是线程不安全的，所以每一个`actor`分别输出不同的文件。文件的后缀使用`.actor.{skynet.self()}`来拼接。
+生成的原生覆盖率结果转换为`lcov`格式，通过 [lcov](https://man.archlinux.org/man/lcov.1.en) 命令进行合多`actor`的结果。然后通过 [diff-cover](https://github.com/Bachmann1234/diff_cover) 进行增量覆盖率以及页面生成。
 
-LuaCov is a simple coverage analyzer for [Lua](http://www.lua.org) scripts.
-When a Lua script is run with the `luacov` module loaded, it generates a stats
-file with the number of executions of each line of the script and its loaded
-modules. The `luacov` command-line script then processes this file generating
-a report file which allows one to visualize which code paths were not
-traversed, which is useful for verifying the effectiveness of a test suite.
+## 下载安装
+直接将`git`项目`clone`至项目`package.path`任意目录下即可。
+为了提高检测文件的效率，相关方法调用的是`src/fileutil.c`生成的`so`库，针对项目的环境进行编译即可。也需要放在项目`package.path`任意目录下。
 
-LuaCov is free software and, like Lua, is released under the
-[MIT License](https://www.lua.org/license.html).
-
-## Download and Installation
-
-LuaCov can be downloaded from its
-[Github downloads page](https://github.com/lunarmodules/luacov/releases).
-
-It can also be installed using Luarocks:
-
-```
-luarocks install luacov
-```
-
-In order to additionally install experimental C extensions that improve
-performance and analysis accuracy install
-[CLuaCov](https://github.com/mpeterv/cluacov) package instead:
-
-```
-luarocks install cluacov
-```
-
-LuaCov is written in pure Lua and has no external dependencies.
-
-## Instructions
-
-Using LuaCov consists of two steps: running your script to collect coverage
-data, and then running `luacov` on the collected data to generate a report
-(see [configuration](#configuration) below for other options).
-
-To collect coverage data, your script needs to load the `luacov` Lua module.
-This can be done from the command-line, without modifying your script, like
-this:
-
-    lua -lluacov test.lua
-
-Alternatively, you can add `require("luacov")` to the first line of your
-script.
-
-Once the script is run, a file called `luacov.stats.out` is generated. If the
-file already exists, statistics are _added_ to it. This is useful, for
-example, for making a series of runs with different input parameters in a test
-suite. To start the accounting from scratch, just delete the stats file.
-
-To generate a report, just run the `luacov` command-line script. It expects to
-find a file named `luacov.stats.out` in the current directory, and outputs a
-file named `luacov.report.out`. The script takes the following parameters:
-
-    luacov [-c=configfile] [filename...]
-
-For the `-c` option see below at [configuration](#configuration). The filenames
-(actually Lua patterns) indicate the files to include in the report, specifying
-them here equals to adding them to the `include` list in the configuration
-file, with `.lua` extension stripped.
-
-This is an example output of the report file:
-
-```
-==============================================================================
-test.lua
-==============================================================================
- 1 if 10 > 100 then
-*0    print("I don't think this line will execute.")
-   else
- 1    print("Hello, LuaCov!")
-   end
-```
-
-Note that to generate this report, `luacov` reads the source files. Therefore,
-it expects to find them in the same location they were when the `luacov`
-module ran (the stats file stores the filenames, but not the sources
-themselves).
-
-To silence missed line reporting for a group of lines, place inline options
-`luacov: disable` and `luacov: enable` in short comments around them:
-
+## 使用说明
+### step.1 导入模块
+所有需要检测覆盖率的`lua`代码开头增加
 ```lua
-if SOME_DEBUG_CONDITION_THAT_IS_ALWAYS_FALSE_IN_TESTS then
-   -- luacov: disable
-
-   -- Lines here are not marked as missed even though they are not covered.
-
-   -- luacov: enable
-end
+require("luacov.tick")
 ```
 
-LuaCov saves its stats upon normal program termination. If your program is a
-daemon -- in other words, if it does not terminate normally -- you can use the
-`luacov.tick` module or `tick` configuration option, which periodically saves
-the stats file. For example, to run (on Unix systems) LuaCov on
-[Xavante](httpsf://lunarmodules.github.io/xavante/), just modify the first line
-of `xavante_start.lua` so it reads:
-
-```
-#!/usr/bin/env lua -lluacov.tick
-```
-
-or add
-
+### step.2 生成原始文件
+指定生成原始文件的文件标识名。
 ```lua
-tick = true
+-- defaults.lua
+report_lock_file = "luacov.report"
 ```
-
-to `.luacov` config file.
-
-
-## Configuration
-
-LuaCov includes several configuration options, which have their defaults
-stored in `src/luacov/defaults.lua`. These are the global defaults. To use
-project specific configuration, create a Lua script setting options as globals
-or returning a table with some options and store it as `.luacov` in the project
-directory from where `luacov` is being run. Alternatively, store it elsewhere
-and specify the path in the `LUACOV_CONFIG` environment variable.
-
-For example, this config informs LuaCov that only `foo` module and its
-submodules should be covered and that they are located inside `src` directory:
-
+在项目主目录下`touch`即可。
+对应的`reset`执行结果的文件标识名。
 ```lua
-modules = {
-   ["foo"] = "src/foo/init.lua",
-   ["foo.*"] = "src"
-}
+-- defaults.lua
+result_report_lock_file = "luacov.report.reset"
+```
+`touch`后删除即可。
+
+### step.3 转换为 lcov 格式
+```shell
+luacov -r lcov -s luacov.stats.out.actor.1
+```
+会自动在当前目录下生成`luacov.report.out.actor.1`的`lcov`格式的文件。
+
+### setp.4 合并多 actor 的 lcov 文件
+```shell
+lcov -a luacov.stats.out.actor.1 -a luacov.stats.out.actor.2 -o luacov.report.out.lcov
 ```
 
-For a full list of options, see
-[`luacov.defaults` documentation](https://lunarmodules.github.io/luacov/doc/modules/luacov.defaults.html).
+创建`report_lock_file`后必须创建`luacov.report.reset`才能重置状态。
+由于代码执行都是事件驱动的，所以没办法保证创建`report_lock_file`文件后就一定会有代码逻辑执行了每个`acotr`。为了保证覆盖率`100%`准确，业务方需要配合提供一个基于`skynet`可以调用所有`actor`的方法。
 
-## Html reporter
-
-To generate report file as html document, adjust the `.luacov` parameters to
-
-```lua
-reporter = "html"
-reportfile = "luacov.report.html"
-```
-
-![LuaCov Html Reporter](docs/luacov-html-reporter.png)
-
-## Custom reporter engines
-
-LuaCov supports custom reporter engines, which are distributed as separate
-packages. Check them out!
-
-* Cobertura: https://github.com/britzl/luacov-cobertura
-* Coveralls: https://github.com/moteus/luacov-coveralls
-* Console: https://github.com/spacewander/luacov-console
-* LCOV: https://github.com/daurnimator/luacov-reporter-lcov
-
-## Using development version
-
-After cloning this repo, these commands may be useful:
-
-* `luarocks make` to install LuaCov from local sources;
-* `busted` to run tests using [busted](https://github.com/Olivine-Labs/busted).
-* `ldoc .` to regenerate documentation using
-  [LDoc](https://github.com/stevedonovan/LDoc).
-* `luacheck .` to lint using [Luacheck](https://github.com/lunarmodules/luacheck).
-
-## Credits
-
-LuaCov was designed and implemented by Hisham Muhammad as a tool for testing
-[LuaRocks](https://luarocks.org/).
+## 拓展
+非`skynet`项目可以把`skynet.self()`替换成获取对应的进程`id`等唯一标识即可应用。

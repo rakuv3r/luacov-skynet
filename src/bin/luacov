@@ -1,5 +1,6 @@
 #!/usr/bin/env lua
 local runner = require("luacov.runner")
+local util = require("luacov.util")
 
 local patterns = {}
 local configfile
@@ -66,6 +67,8 @@ local function norm_pat(p)
    return (p:gsub("\\", "/"):gsub("%.lua$", ""))
 end
 
+local statsfile = nil
+
 local i = 1
 while arg[i] do
    local key, value
@@ -78,6 +81,8 @@ while arg[i] do
          configfile = value
       elseif (key == "r") or (key == "reporter") then
          reporter = value
+      elseif (key == "s") then
+         statsfile = value
       end
    else
       table.insert(patterns, norm_pat(value))
@@ -89,6 +94,12 @@ local configuration = runner.load_config(configfile)
 
 configuration.include = configuration.include or {}
 configuration.exclude = configuration.exclude or {}
+
+if statsfile then
+   configuration.statsfile = statsfile
+   split_arr = util.split(statsfile, ".")
+   configuration.reportfile = configuration.reportfile .. ".actor." .. split_arr[#split_arr]
+end
 
 -- add elements specified on commandline to config
 for _, patt in ipairs(patterns) do

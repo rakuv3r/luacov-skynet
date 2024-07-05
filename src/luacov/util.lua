@@ -1,3 +1,5 @@
+local string = require("string")
+
 ---------------------------------------------------
 -- Utility module.
 -- @class module
@@ -98,6 +100,27 @@ function util.file_exists(name)
    else
       return false
    end
+end
+
+function util.print_table(tbl, indent)
+   indent = indent or 0
+   for k, v in pairs(tbl) do
+      if type(v) == "table" then
+         print(string.rep(" ", indent) .. k .. ": ")
+         util.print_table(v, indent + 4)
+      else
+         print(string.rep(" ", indent) .. k .. ": " .. tostring(v))
+      end
+   end
+end
+
+function util.split(str, sep)
+   sep = sep or "%s"
+   local parts = {}
+   for part in string.gmatch(str, "([^" .. sep .. "]+)") do
+      table.insert(parts, part)
+   end
+   return parts
 end
 
 return util

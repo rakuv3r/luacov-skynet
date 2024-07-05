@@ -57,6 +57,8 @@ end
 -- @param statsfile path to the stats file.
 -- @param data data to store.
 function stats.save(statsfile, data)
+   local skynet = require("skynet")
+   statsfile = statsfile .. ".actor." .. skynet.self()
    local fd = assert(io.open(statsfile, "w"))
 
    local filenames = {}

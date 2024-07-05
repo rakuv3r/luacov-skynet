@@ -5,6 +5,11 @@
 -- @class module
 -- @name luacov.defaults
 return {
+  --- Get report lock file
+  report_lock_file = "luacov.report",
+
+  --- Reset report file
+  result_report_lock_file = "luacov.report.reset",
 
   --- Filename to store collected stats. Default: "luacov.stats.out".
   statsfile = "luacov.stats.out",
@@ -15,14 +20,14 @@ return {
   --- Enable saving coverage data after every `savestepsize` lines?
   -- Setting this flag to `true` in config is equivalent to running LuaCov
   -- using `luacov.tick` module. Default: false.
-  tick = false,
+  tick = true,
 
   --- Stats file updating frequency for `luacov.tick`.
   -- The lower this value - the more frequently results will be written out to the stats file.
   -- You may want to reduce this value (to, for example, 2) to avoid losing coverage data in
   -- case your program may terminate without triggering luacov exit hooks that are supposed
   -- to save the data. Default: 100.
-  savestepsize = 100,
+  savestepsize = 1,
 
   --- Run reporter on completion? Default: false.
   runreport = false,

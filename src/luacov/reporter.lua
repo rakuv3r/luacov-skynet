@@ -64,11 +64,44 @@ end
 -- end
 -- @type ReporterBase
 local ReporterBase = {} do
-ReporterBase.__index = ReporterBase
-
-function ReporterBase:new(conf)
-   local stats = require("luacov.stats")
-   local data = stats.load(conf.statsfile)
+   ReporterBase.__index = ReporterBase
+   function ReporterBase:new(conf)
+     local data = {}
+     local fd = io.open(conf.statsfile, "r")
+     if not fd then
+        return nil, "Could not load stats file " .. conf.statsfile .. "."
+     end
+     while true do
+        local max = fd:read("*n")
+        if not max then
+           break
+        end
+        if fd:read(1) ~= ":" then
+           break
+        end
+        local filename = fd:read("*l")
+        if not filename then
+           break
+        end
+        data[filename] = {
+           max = max,
+           max_hits = 0
+        }
+        for i = 1, max do
+           local hits = fd:read("*n")
+           if not hits then
+              break
+           end
+           if fd:read(1) ~= " " then
+              break
+           end
+           if hits > 0 then
+              data[filename][i] = hits
+              data[filename].max_hits = math.max(data[filename].max_hits, hits)
+           end
+        end
+     end
+     fd:close()
 
    if not data then
       return nil, "Could not load stats file " .. conf.statsfile .. "."
@@ -138,7 +171,7 @@ function ReporterBase:new(conf)
       end
 
       if (conf.includeuntestedfiles == true) then
-        add_empty_dir_coverage_data("." .. dir_sep)
+         add_empty_dir_coverage_data("." .. dir_sep)
 
       elseif (type(conf.includeuntestedfiles) == "table" and conf.includeuntestedfiles[1]) then
          for _, include_path in ipairs(conf.includeuntestedfiles) do
@@ -322,7 +355,8 @@ function ReporterBase:_run_file(filename)
             file_hits = file_hits + 1
          end
       else
-         self:on_empty_line(filename, line_nr, line)
+         self:on_mis_line(filename, line_nr, line)
+         file_miss = file_miss + 1
       end
 
       line_nr = line_nr + 1

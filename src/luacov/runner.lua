@@ -83,17 +83,26 @@ end
 
 -- Adds accumulated stats to existing stats file or writes a new one, then resets data.
 function runner.save_stats()
-   local loaded = stats.load(runner.configuration.statsfile) or {}
-
    for name, file_data in pairs(runner.data) do
-      if loaded[name] then
-         runner.update_stats(loaded[name], file_data)
+      if _G.__SKYNET_LUACOV_COVERAGE_DATA[name] then
+         runner.update_stats(_G.__SKYNET_LUACOV_COVERAGE_DATA[name], file_data)
       else
-         loaded[name] = file_data
+         _G.__SKYNET_LUACOV_COVERAGE_DATA[name] = file_data
       end
    end
 
-   stats.save(runner.configuration.statsfile, loaded)
+   local fileutil = require("fileutil")
+
+   if fileutil.file_exists(runner.configuration.report_lock_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
+      stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
+      _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = true
+   end
+
+   if fileutil.file_exists(runner.configuration.result_report_lock_file) then
+      _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
+      _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = false
+   end
+
    runner.data = {}
 end
 
@@ -138,7 +147,7 @@ local on_exit_run_once = false
 
 local function on_exit()
    -- Lua >= 5.2 could call __gc when user call os.exit
-   -- so this method could be called twice
+   --so this method could be called twice
    if on_exit_run_once then return end
    on_exit_run_once = true
    -- disable hooks before aggregating stats
@@ -335,7 +344,7 @@ local function set_config(configuration)
    -- Convert path options to absolute paths to use correct paths anyway.
    local cur_dir
 
-   for _, option in ipairs({"statsfile", "reportfile"}) do
+   for _, option in ipairs({"statsfile", "reportfile", "report_lock_file", "result_report_lock_file"}) do
       local path = runner.configuration[option]
 
       if not is_absolute(path) then
@@ -502,7 +511,6 @@ function runner.init(configuration)
          end
       end
    end
-
    if not runner.tick then
       runner.on_exit_trick = on_exit_wrap(on_exit)
    end
