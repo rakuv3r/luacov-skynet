@@ -10,24 +10,26 @@ local stats = require("luacov.stats")
 -- @class module
 -- @name luacov.tick
 -- @see luacov.defaults.savestepsize
-local runner = require("luacov.runner")
-runner.tick = true
-runner.init()
+return {
+    init = function ()
+        local runner = require("luacov.runner")
+        runner.tick = true
+        runner.init()
 
---- overwrite exit
-local old_exit = skynet.exit
-local new_exit = function()
-    stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
-    old_exit()
-end
-skynet.exit = new_exit
+        --- overwrite exit
+        local old_exit = skynet.exit
+        local new_exit = function()
+            stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
+            old_exit()
+        end
+        skynet.exit = new_exit
 
---- overwrite kill
-local old_kill = skynet.kill
-local new_kill = function()
-    stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
-    old_kill()
-end
-skynet.kill = new_kill
-
-return {}
+        --- overwrite kill
+        local old_kill = skynet.kill
+        local new_kill = function()
+            stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
+            old_kill()
+        end
+        skynet.kill = new_kill
+    end
+}

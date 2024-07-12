@@ -19,16 +19,13 @@
 
 ## 下载安装
 1. 克隆项目后，编译`src/fileutil.c`生成`fileutil.so`库;
-2. 将`src/bin/luacov`复制到系统的任意可执行路径;
-3. 将`src/luacov`和`fileutil.so`复制到项目的`package.path`中的任意路径。
-
-_`fileutil.so`库用于提高文件检测的效率。_
+2. 将`src/bin/luacov`复制到系统的任意可执行路径。
 
 ## 使用说明
 ### 第一步: 导入模块
 在所有需要检测覆盖率的Lua代码开头添加:
 ```lua
-require("luacov.tick")
+require("luacov.tick").init()
 ```
 
 ### 第二步: 生成原始覆盖率文件

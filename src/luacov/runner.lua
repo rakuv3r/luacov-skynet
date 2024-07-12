@@ -91,14 +91,12 @@ function runner.save_stats()
       end
    end
 
-   local fileutil = require("fileutil")
-
-   if fileutil.file_exists(runner.configuration.report_lock_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
+   if util.file_exists(runner.configuration.report_lock_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
       stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
       _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = true
    end
 
-   if fileutil.file_exists(runner.configuration.result_report_lock_file) then
+   if util.file_exists(runner.configuration.result_report_lock_file) then
       _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
       _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = false
    end
@@ -687,5 +685,37 @@ function runner.includetree(name, level)
   return checkresult(pcall(addtreetolist, name, level, runner.configuration.include))
 end
 
+local function deep_copy(object)
+   if type(object) ~= "table" then
+      return object
+   end
+   local o = {}
+   for k, v in pairs(object) do
+      o[k] = deep_copy(v)
+   end
+   return o
+end
 
-return setmetatable(runner, {__call = function(_, configfile) runner.init(configfile) end})
+local function new(object)
+
+   if type(object) ~= "table" then
+      return object
+   end
+
+   local o = {}
+   setmetatable(
+           o,
+           {
+              __index = object,
+              __call = function(_, configfile) object.init(configfile) end
+           }
+   )
+   for k, v in pairs(object) do
+      if type(v) ~= "function" then
+         o[k] = deep_copy(v)
+      end
+   end
+   return o
+end
+
+return new(runner)
