@@ -97,7 +97,11 @@ function runner.save_stats()
    end
 
    if util.file_exists(runner.configuration.result_report_lock_file) then
-      _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
+      for key, _ in pairs(_G.__SKYNET_LUACOV_COVERAGE_DATA) do
+         if type(key) == "number" then
+            _G.__SKYNET_LUACOV_COVERAGE_DATA[key] = 0
+         end
+      end
       _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = false
    end
 
