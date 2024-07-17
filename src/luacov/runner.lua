@@ -81,6 +81,8 @@ function runner.update_stats(old_stats, extra_stats)
    end
 end
 
+local c_util_ok = pcall(require, "fileutil")
+
 -- Adds accumulated stats to existing stats file or writes a new one, then resets data.
 function runner.save_stats()
    for name, file_data in pairs(runner.data) do
@@ -90,6 +92,8 @@ function runner.save_stats()
          _G.__SKYNET_LUACOV_COVERAGE_DATA[name] = file_data
       end
    end
+
+   util = require(c_util_ok and "fileutil" or "luacov.util")
 
    if util.file_exists(runner.configuration.report_lock_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
       stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
