@@ -19,7 +19,8 @@
 
 ## 下载安装
 1. 克隆项目后，编译`src/fileutil.c`生成`fileutil.so`库;
-2. 将`src/bin/luacov`复制到系统的任意可执行路径。
+2. 使用 [cluacov](https://github.com/mpeterv/cluacov);
+3. 将`src/bin/luacov`复制到系统的任意可执行路径;
 
 ## 使用说明
 ### 第一步: 导入模块
