@@ -5,11 +5,14 @@
 -- @class module
 -- @name luacov.defaults
 return {
-  --- Get report lock file
-  report_lock_file = "luacov.report",
+  --- Collection coverage flag file
+  report_doing_file = "luacov.doing",
 
-  --- Reset report file
-  result_report_lock_file = "luacov.report.reset",
+  --- Get report flag file
+  report_get_file = "luacov.report",
+
+  --- Reset report flag file
+  result_reset_file = "luacov.reset",
 
   --- Filename to store collected stats. Default: "luacov.stats.out".
   statsfile = "luacov.stats.out",

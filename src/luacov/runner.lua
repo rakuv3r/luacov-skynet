@@ -12,6 +12,8 @@ local stats = require("luacov.stats")
 local util = require("luacov.util")
 runner.defaults = require("luacov.defaults")
 
+local fileutil = require("fileutil")
+
 local debug = require("debug")
 local raw_os_exit = os.exit
 
@@ -81,10 +83,12 @@ function runner.update_stats(old_stats, extra_stats)
    end
 end
 
-local c_util_ok = pcall(require, "fileutil")
-
 -- Adds accumulated stats to existing stats file or writes a new one, then resets data.
 function runner.save_stats()
+   if not fileutil.file_exists(runner.configuration.report_doing_file) then
+      return
+   end
+
    for name, file_data in pairs(runner.data) do
       if _G.__SKYNET_LUACOV_COVERAGE_DATA[name] then
          runner.update_stats(_G.__SKYNET_LUACOV_COVERAGE_DATA[name], file_data)
@@ -93,19 +97,14 @@ function runner.save_stats()
       end
    end
 
-   util = require(c_util_ok and "fileutil" or "luacov.util")
-
-   if util.file_exists(runner.configuration.report_lock_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
+   if fileutil.file_exists(runner.configuration.report_get_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
       stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
+      _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
       _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = true
    end
 
-   if util.file_exists(runner.configuration.result_report_lock_file) then
-      for key, _ in pairs(_G.__SKYNET_LUACOV_COVERAGE_DATA) do
-         if type(key) == "number" then
-            _G.__SKYNET_LUACOV_COVERAGE_DATA[key] = 0
-         end
-      end
+   if fileutil.file_exists(runner.configuration.result_reset_file) then
+      _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
       _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = false
    end
 
@@ -350,7 +349,7 @@ local function set_config(configuration)
    -- Convert path options to absolute paths to use correct paths anyway.
    local cur_dir
 
-   for _, option in ipairs({"statsfile", "reportfile", "report_lock_file", "result_report_lock_file"}) do
+   for _, option in ipairs({"statsfile", "reportfile", "report_doing_file", "report_get_file", "result_reset_file"}) do
       local path = runner.configuration[option]
 
       if not is_absolute(path) then

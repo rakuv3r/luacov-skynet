@@ -67,7 +67,7 @@ function hook.new(runner)
       if runner.tick then
          steps_after_save = steps_after_save + 1
 
-         if steps_after_save == runner.configuration.savestepsize then
+         if steps_after_save >= runner.configuration.savestepsize then
             steps_after_save = 0
 
             if not runner.paused then

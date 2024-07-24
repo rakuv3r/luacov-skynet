@@ -30,12 +30,13 @@ require("luacov.tick").init()
 ```
 
 ### 第二步: 生成原始覆盖率文件
+只有创建`report_doing_file`的文件后才会收集覆盖率数据。
 覆盖率数据在内存中，通过创建文件进行跨进程通信。
 
 指定生成原始文件的文件标识名:
 ```lua
 -- defaults.lua
-report_lock_file = "luacov.report"
+report_get_file = "luacov.report"
 ```
 在项目主目录下执行以下命令:
 ```shell
@@ -45,7 +46,7 @@ touch luacov.report
 要重置执行结果的文件标识名:
 ```lua
 -- defaults.lua
-result_report_lock_file = "luacov.report.reset"
+result_reset_file = "luacov.report.reset"
 ```
 创建后立即删除即可。
 
