@@ -499,6 +499,13 @@ function runner.init(configuration)
          return co
       end
 
+      local rawskynetoroutinecreate = skynet.co_create
+      skynet.co_create = function(...) -- luacheck: no global
+         local co = rawskynetoroutinecreate(...)
+         debug.sethook(co, runner.debug_hook, "l")
+         return co
+      end
+
       -- Version of assert which handles non-string errors properly.
       local function safeassert(ok, ...)
          if ok then
@@ -692,37 +699,4 @@ function runner.includetree(name, level)
   return checkresult(pcall(addtreetolist, name, level, runner.configuration.include))
 end
 
-local function deep_copy(object)
-   if type(object) ~= "table" then
-      return object
-   end
-   local o = {}
-   for k, v in pairs(object) do
-      o[k] = deep_copy(v)
-   end
-   return o
-end
-
-local function new(object)
-
-   if type(object) ~= "table" then
-      return object
-   end
-
-   local o = {}
-   setmetatable(
-           o,
-           {
-              __index = object,
-              __call = function(_, configfile) object.init(configfile) end
-           }
-   )
-   for k, v in pairs(object) do
-      if type(v) ~= "function" then
-         o[k] = deep_copy(v)
-      end
-   end
-   return o
-end
-
-return new(runner)
+return setmetatable(runner, {__call = function(_, configfile) runner.init(configfile) end})
