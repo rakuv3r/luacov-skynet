@@ -86,7 +86,6 @@ end
 local skynet = require("skynet")
 local function task()
    if fileutil.file_exists(runner.configuration.report_get_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
-      print("_do_handle_post_message save file", skynet.self(), "_G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG", _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG)
       stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
       _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
       _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = true

@@ -30,7 +30,7 @@ require("luacov.tick")
 ```
 
 ### 第二步: 生成原始覆盖率文件
-只有创建`report_doing_file`的文件后才会收集覆盖率数据。
+只有创建`$report_doing_file`文件后才会收集覆盖率数据。
 覆盖率数据在内存中，通过创建文件进行跨进程通信。
 
 指定生成原始文件的文件标识名:
@@ -46,16 +46,15 @@ touch luacov.report
 要重置执行结果的文件标识名:
 ```lua
 -- defaults.lua
-result_reset_file = "luacov.report.reset"
+result_reset_file = "luacov.reset"
 ```
-创建后立即删除即可。
 
 ### 第三步：转换为 lcov 格式
 执行以下命令自动在当前目录下生成`lcov`格式的文件:
 ```shell
 luacov -r lcov -s luacov.stats.out.actor.1
 ```
-其中，.actor.是固定的，luacov.report.out取自default.lua的reportfile配置。
+其中`.actor.`是固定的，`luacov.report.out`取自`default.lua`的`reportfile`配置。
 
 ### 合并多个 actor 的 lcov 文件
 使用以下命令合并多个`actor`的`lcov`文件:
@@ -63,3 +62,6 @@ luacov -r lcov -s luacov.stats.out.actor.1
 lcov -a luacov.stats.out.actor.1 -a luacov.stats.out.actor.2 -o luacov.report.out.lcov
 ```
 创建`$report_lock_file`后，必须创建`$luacov.report.reset`来重置状态。
+
+### 注意
+文件监控逻辑跑在`skynet`的定时器上，目前是间隔`1s`,相关文件创建、删除操作保险来看要`sleep 2s`以上。
