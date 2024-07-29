@@ -4,6 +4,8 @@
 -- @name luacov.hook
 local hook = {}
 
+local fileutil = require("fileutil")
+
 ----------------------------------------------------------------
 local dir_sep = package.config:sub(1, 1)
 if not dir_sep:find("[/\\]") then
@@ -29,6 +31,9 @@ function hook.new(runner)
 
       -- Get name of processed file.
       local name = debug.getinfo(level, "S").source
+      if not fileutil.file_exists(runner.configuration.report_get_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA[name] and _G.__SKYNET_LUACOV_COVERAGE_DATA[name][line_nr] then
+         return
+      end
       local prefixed_name = string.match(name, "^@(.*)")
       if prefixed_name then
          name = prefixed_name:gsub("^%.[/\\]", ""):gsub("[/\\]", dir_sep)
@@ -37,8 +42,13 @@ function hook.new(runner)
          return
       end
 
+      if not fileutil.file_exists(runner.configuration.report_get_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA[name] and _G.__SKYNET_LUACOV_COVERAGE_DATA[name][line_nr] then
+         return
+      end
+
       local data = runner.data
       local file = data[name]
+
 
       if not file then
          -- New or ignored file.

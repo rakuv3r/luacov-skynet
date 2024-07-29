@@ -19,14 +19,14 @@
 
 ## 下载安装
 1. 克隆项目后，编译`src/fileutil.c`生成`fileutil.so`库;
-2. 使用 [cluacov](https://github.com/mpeterv/cluacov);
+2. 使用 [cluacov-skynet](https://github.com/mydevops/cluacov-skynet);
 3. 将`src/bin/luacov`复制到系统的任意可执行路径;
 
 ## 使用说明
 ### 第一步: 导入模块
-在所有需要检测覆盖率的Lua代码开头添加:
+在所有需要检测覆盖率的`Lua`代码开头添加:
 ```lua
-require("luacov.tick").init()
+require("luacov.tick")
 ```
 
 ### 第二步: 生成原始覆盖率文件
@@ -62,12 +62,4 @@ luacov -r lcov -s luacov.stats.out.actor.1
 ```shell
 lcov -a luacov.stats.out.actor.1 -a luacov.stats.out.actor.2 -o luacov.report.out.lcov
 ```
-创建`$report_lock_file`后，必须创建`$luacov.report.reset`来重置状态。由于代码执行是事件驱动的，无法保证创建`$report_lock_file`文件后立即执行每个`actor`的代码。为了准确获取`100%`的覆盖率，业务方需要提供一个基于`Skynet`可以调用所有`actor`的方法。
-
-
-## 执行流程
-<img src="./docs/tick-process.png" width="303"  alt=""/>
-
-
-## 拓展
-非`skynet`项目可以把`skynet.self()`替换成获取对应的进程`id`等唯一标识即可应用。
+创建`$report_lock_file`后，必须创建`$luacov.report.reset`来重置状态。

@@ -62,7 +62,7 @@ function runner.file_included(filename)
    -- If include list is empty, everything is included by default.
    -- If exclude list is empty, nothing is excluded by default.
    return match_any(runner.configuration.include, filename, true) and
-      not match_any(runner.configuration.exclude, filename, false)
+           not match_any(runner.configuration.exclude, filename, false)
 end
 
 --------------------------------------------------
@@ -83,21 +83,10 @@ function runner.update_stats(old_stats, extra_stats)
    end
 end
 
--- Adds accumulated stats to existing stats file or writes a new one, then resets data.
-function runner.save_stats()
-   if not fileutil.file_exists(runner.configuration.report_doing_file) then
-      return
-   end
-
-   for name, file_data in pairs(runner.data) do
-      if _G.__SKYNET_LUACOV_COVERAGE_DATA[name] then
-         runner.update_stats(_G.__SKYNET_LUACOV_COVERAGE_DATA[name], file_data)
-      else
-         _G.__SKYNET_LUACOV_COVERAGE_DATA[name] = file_data
-      end
-   end
-
+local skynet = require("skynet")
+local function task()
    if fileutil.file_exists(runner.configuration.report_get_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
+      print("_do_handle_post_message save file", skynet.self(), "_G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG", _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG)
       stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
       _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
       _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = true
@@ -107,7 +96,22 @@ function runner.save_stats()
       _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
       _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = false
    end
+   skynet.timeout(100, task)
+end
 
+skynet.fork(function()
+   skynet.timeout(100, task)
+end)
+
+-- Adds accumulated stats to existing stats file or writes a new one, then resets data.
+function runner.save_stats()
+   for name, file_data in pairs(runner.data) do
+      if _G.__SKYNET_LUACOV_COVERAGE_DATA[name] then
+         runner.update_stats(_G.__SKYNET_LUACOV_COVERAGE_DATA[name], file_data)
+      else
+         _G.__SKYNET_LUACOV_COVERAGE_DATA[name] = file_data
+      end
+   end
    runner.data = {}
 end
 
@@ -472,6 +476,29 @@ function runner.with_luacov(f)
    end
 end
 
+local function set_func_upvalue(f, name, value)
+   local uname
+   local i = 0
+   repeat
+      i = i + 1
+      uname = debug.getupvalue(f, i)
+   until (not uname or uname == name)
+   if not uname then
+      return false
+   end
+   return debug.setupvalue(f, i, value) == uname
+end
+
+local function get_func_upvalue(f, name)
+   local uname, uvalue
+   local i=0
+   repeat
+      i = i + 1
+      uname, uvalue = debug.getupvalue(f, i)
+   until (not uname or uname == name)
+   return uvalue
+end
+
 --------------------------------------------------
 -- Initializes LuaCov runner to start collecting data.
 -- @param[opt] configuration if string, filename of config file (used to call `load_config`).
@@ -495,16 +522,29 @@ function runner.init(configuration)
       local rawcoroutinecreate = coroutine.create
       coroutine.create = function(...) -- luacheck: no global
          local co = rawcoroutinecreate(...)
-         debug.sethook(co, runner.debug_hook, "l")
+         if fileutil.file_exists(runner.configuration.report_doing_file) then
+            debug.sethook(co, runner.debug_hook, "l")
+         else
+            debug.sethook(co, nil, "l")
+         end
          return co
       end
 
-      local rawskynetoroutinecreate = skynet.co_create
-      skynet.co_create = function(...) -- luacheck: no global
-         local co = rawskynetoroutinecreate(...)
-         debug.sethook(co, runner.debug_hook, "l")
-         return co
+      local co_create = get_func_upvalue(skynet.fork, "co_create")
+      if co_create then
+         local rawskynetoroutinecreate = co_create
+         local function coroutine_create(...) -- luacheck: no global
+            local co = rawskynetoroutinecreate(...)
+            if fileutil.file_exists(runner.configuration.report_doing_file) then
+               debug.sethook(co, runner.debug_hook, "l")
+            else
+               debug.sethook(co, nil, "l")
+            end
+            return co
+         end
+         set_func_upvalue(skynet.fork, "co_create", coroutine_create)
       end
+
 
       -- Version of assert which handles non-string errors properly.
       local function safeassert(ok, ...)
@@ -624,9 +664,9 @@ local function escapefilename(name)
 end
 
 local function addfiletolist(name, list)
-  local f = "^"..escapefilename(getfilename(name)).."$"
-  table.insert(list, f)
-  return f
+   local f = "^"..escapefilename(getfilename(name)).."$"
+   table.insert(list, f)
+   return f
 end
 
 local function addtreetolist(name, level, list)
@@ -668,14 +708,14 @@ end
 -- * table;    module table where containing file is looked up
 -- @return the pattern as added to the list, or nil + error
 function runner.excludefile(name)
-  return checkresult(pcall(addfiletolist, name, runner.configuration.exclude))
+   return checkresult(pcall(addfiletolist, name, runner.configuration.exclude))
 end
 -------------------------------------------------------------------
 -- Adds a file to the include list (see `luacov.defaults`).
 -- @param name see `excludefile`
 -- @return the pattern as added to the list, or nil + error
 function runner.includefile(name)
-  return checkresult(pcall(addfiletolist, name, runner.configuration.include))
+   return checkresult(pcall(addfiletolist, name, runner.configuration.include))
 end
 -------------------------------------------------------------------
 -- Adds a tree to the exclude list (see `luacov.defaults`).
@@ -688,7 +728,7 @@ end
 -- @param level if truthy then one level up is added, including the tree
 -- @return the 2 patterns as added to the list (file and tree), or nil + error
 function runner.excludetree(name, level)
-  return checkresult(pcall(addtreetolist, name, level, runner.configuration.exclude))
+   return checkresult(pcall(addtreetolist, name, level, runner.configuration.exclude))
 end
 -------------------------------------------------------------------
 -- Adds a tree to the include list (see `luacov.defaults`).
@@ -696,7 +736,40 @@ end
 -- @param level see `includetree`
 -- @return the 2 patterns as added to the list (file and tree), or nil + error
 function runner.includetree(name, level)
-  return checkresult(pcall(addtreetolist, name, level, runner.configuration.include))
+   return checkresult(pcall(addtreetolist, name, level, runner.configuration.include))
+end
+
+local function deep_copy(object)
+   if type(object) ~= "table" then
+      return object
+   end
+   local o = {}
+   for k, v in pairs(object) do
+      o[k] = deep_copy(v)
+   end
+   return o
+end
+
+local function new(object)
+
+   if type(object) ~= "table" then
+      return object
+   end
+
+   local o = {}
+   setmetatable(
+           o,
+           {
+              __index = object,
+              __call = function(_, configfile) object.init(configfile) end
+           }
+   )
+   for k, v in pairs(object) do
+      if type(v) ~= "function" then
+         o[k] = deep_copy(v)
+      end
+   end
+   return o
 end
 
 return setmetatable(runner, {__call = function(_, configfile) runner.init(configfile) end})
