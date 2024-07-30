@@ -4,7 +4,11 @@
 -- @name luacov.hook
 local hook = {}
 
-local fileutil = require("fileutil")
+local fileutil
+
+if _G.__SKYNET_LUACOV_COVERAGE_DATA ~= nil then
+   fileutil = require("fileutil")
+end
 
 ----------------------------------------------------------------
 local dir_sep = package.config:sub(1, 1)

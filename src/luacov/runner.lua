@@ -8,11 +8,12 @@ local runner = {}
 --- LuaCov version in `MAJOR.MINOR.PATCH` format.
 runner.version = "0.15.0"
 
+local skynet
+local fileutil
+
 local stats = require("luacov.stats")
 local util = require("luacov.util")
 runner.defaults = require("luacov.defaults")
-
-local fileutil = require("fileutil")
 
 local debug = require("debug")
 local raw_os_exit = os.exit
@@ -83,24 +84,27 @@ function runner.update_stats(old_stats, extra_stats)
    end
 end
 
-local skynet = require("skynet")
-local function task()
-   if fileutil.file_exists(runner.configuration.report_get_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
-      stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
-      _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
-      _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = true
+if _G.__SKYNET_LUACOV_COVERAGE_DATA ~= nil then
+   fileutil = require("fileutil")
+   skynet = require("skynet")
+   local function task()
+      if fileutil.file_exists(runner.configuration.report_get_file) and _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG == false then
+         stats.save(runner.configuration.statsfile, _G.__SKYNET_LUACOV_COVERAGE_DATA)
+         _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
+         _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = true
+      end
+
+      if fileutil.file_exists(runner.configuration.result_reset_file) then
+         _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
+         _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = false
+      end
+      skynet.timeout(100, task)
    end
 
-   if fileutil.file_exists(runner.configuration.result_reset_file) then
-      _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
-      _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = false
-   end
-   skynet.timeout(100, task)
+   skynet.fork(function()
+      skynet.timeout(100, task)
+   end)
 end
-
-skynet.fork(function()
-   skynet.timeout(100, task)
-end)
 
 -- Adds accumulated stats to existing stats file or writes a new one, then resets data.
 function runner.save_stats()
