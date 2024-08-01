@@ -94,7 +94,7 @@ if _G.__SKYNET_LUACOV_COVERAGE_DATA ~= nil then
          _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = true
       end
 
-      if fileutil.file_exists(runner.configuration.result_reset_file) then
+      if fileutil.file_exists(runner.configuration.report_doing_file) then
          _G.__SKYNET_LUACOV_COVERAGE_DATA = {}
          _G.__SKYNET_LUACOV_COVERAGE_DATA_WRITE_FLAG = false
       end
@@ -356,7 +356,7 @@ local function set_config(configuration)
    -- Convert path options to absolute paths to use correct paths anyway.
    local cur_dir
 
-   for _, option in ipairs({"statsfile", "reportfile", "report_doing_file", "report_get_file", "result_reset_file"}) do
+   for _, option in ipairs({"statsfile", "reportfile", "report_doing_file", "report_get_file", "report_reset_file"}) do
       local path = runner.configuration[option]
 
       if not is_absolute(path) then

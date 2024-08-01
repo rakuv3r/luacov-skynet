@@ -46,7 +46,7 @@ touch luacov.report
 要重置执行结果的文件标识名:
 ```lua
 -- defaults.lua
-result_reset_file = "luacov.reset"
+report_reset_file = "luacov.reset"
 ```
 
 ### 第三步：转换为 lcov 格式

@@ -12,7 +12,7 @@ return {
   report_get_file = "luacov.report",
 
   --- Reset report flag file
-  result_reset_file = "luacov.reset",
+  report_reset_file = "luacov.reset",
 
   --- Filename to store collected stats. Default: "luacov.stats.out".
   statsfile = "luacov.stats.out",
