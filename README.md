@@ -1,67 +1,101 @@
 <div align="center">
-    <h1>LuaCov - Skynet</h1>
-    <img src="./docs/logo/luacov-skynet.png" width="487"  alt=""/>
-    <p align="center">
-        Coverage analyzer for Skynet
-    </p>
+    <h1>LuaCov-Skynet</h1>
+    <img src="./docs/logo/luacov-skynet.png" width="487" alt=""/>
+    <p>Code coverage tool for Skynet framework</p>
+    
+    [中文](docs/README-zh.md)
 </div>
 
-<br>
+## What is LuaCov-Skynet
 
-## 概述
-`LuaCov-Skynet`是专为`Skynet`框架定制的覆盖率分析库。
+LuaCov-Skynet is a modified version of [LuaCov](https://github.com/lunarmodules/luacov) designed specifically for the Skynet framework.
 
-该项目是 [LuaCov](https://github.com/lunarmodules/luacov) 的扩展。其中`lcov`格式的转换程序源自 [luacov-reporter-lcov](https://github.com/daurnimator/luacov-reporter-lcov)。
+The original LuaCov has data conflicts in Skynet's multi-actor environment. This version solves the problem by creating separate files for each actor.
 
-`LuaCov`本身不支持多线程安全，每个`actor`分别输出不同的文件。文件的后缀使用`.actor.{skynet.self()}`来拼接。
+## How to Use
 
-覆盖率结果以`lcov`格式输出，可以通过 [lcov](https://man.archlinux.org/man/lcov.1.en) 命令合并多个`actor`的结果。然后使用 [diff-cover](https://github.com/Bachmann1234/diff_cover) 进行增量覆盖率和页面生成。
+### 1. Download and Compile
 
-## 下载安装
-1. 克隆项目后，编译`src/fileutil.c`生成`fileutil.so`库;
-2. 使用 [cluacov-skynet](https://github.com/mydevops/cluacov-skynet);
-3. 将`src/bin/luacov`复制到系统的任意可执行路径;
+```bash
+git clone https://github.com/rakuv3r/luacov-skynet.git
+cd luacov-skynet
+gcc -shared -fPIC -o src/fileutil.so src/fileutil.c
+```
 
-## 使用说明
-### 第一步: 导入模块
-在所有需要检测覆盖率的`Lua`代码开头添加:
+### 2. Add to Your Code
+
 ```lua
 require("luacov.tick")
 ```
 
-### 第二步: 生成原始覆盖率文件
-只有创建`$report_doing_file`文件后才会收集覆盖率数据。
-覆盖率数据在内存中，通过创建文件进行跨进程通信。
+### 3. Run Your Program
 
-指定生成原始文件的文件标识名:
-```lua
--- defaults.lua
-report_get_file = "luacov.report"
-```
-在项目主目录下执行以下命令:
-```shell
+```bash
+# Start coverage collection
 touch luacov.report
-```
 
-要重置执行结果的文件标识名:
-```lua
--- defaults.lua
-report_reset_file = "luacov.reset"
-```
+# Run your skynet program
+./your_program
 
-### 第三步：转换为 lcov 格式
-执行以下命令自动在当前目录下生成`lcov`格式的文件:
-```shell
+# Generate report
 luacov -r lcov -s luacov.stats.out.actor.1
-```
-其中`.actor.`是固定的，`luacov.report.out`取自`default.lua`的`reportfile`配置。
 
-### 合并多个 actor 的 lcov 文件
-使用以下命令合并多个`actor`的`lcov`文件:
-```shell
-lcov -a luacov.stats.out.actor.1 -a luacov.stats.out.actor.2 -o luacov.report.out.lcov
+# For multiple actors, merge results
+lcov -a luacov.stats.out.actor.1 -a luacov.stats.out.actor.2 -o coverage.lcov
 ```
-创建`$report_lock_file`后，必须创建`$luacov.report.reset`来重置状态。
 
-### 注意
-文件监控逻辑跑在`skynet`的定时器上，目前是间隔`1s`,相关文件创建、删除操作保险来看要`sleep 2s`以上。
+## Key Features
+
+- Each actor creates separate `.actor.{id}` files to avoid data conflicts
+- Control coverage collection through file creation/deletion
+- Use C extension module for better file detection performance
+- Support LCOV format output
+
+## Configuration
+
+Create `.luacov` file in project root:
+
+```lua
+return {
+  statsfile = "luacov.stats.out",
+  reportfile = "luacov.report.out",
+  include = {"^src/"},
+  exclude = {"test/"}
+}
+```
+
+## Control Commands
+
+| Action | Method |
+|--------|--------|
+| Start collection | `touch luacov.report` |
+| Reset data | `touch luacov.reset` |
+| Stop collection | Remove `luacov.doing` file |
+
+## Common Issues
+
+**Failed to compile fileutil.so**
+- Make sure gcc compiler is installed
+- Check write permissions
+
+**No coverage data generated**
+- Confirm `luacov.doing` file exists
+- Check if `require("luacov.tick")` is called correctly
+
+**Multiple actor data problems**
+- Check if multiple `.actor.{id}` files are generated
+- Use `lcov` command to merge files correctly
+
+## How It Works
+
+When the program runs:
+1. Store coverage data in global variables
+2. Start a 1-second timer to check control files
+3. Save or reset data based on file existence
+4. Each actor writes to separate stats files
+
+File monitoring interval is 1 second. We recommend at least 2 seconds between control file operations.
+
+## License
+
+[MIT License](LICENSE)
