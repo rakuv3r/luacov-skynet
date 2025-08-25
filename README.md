@@ -12,9 +12,9 @@ LuaCov-Skynet is a modified version of [LuaCov](https://github.com/lunarmodules/
 
 The original LuaCov has data conflicts in Skynet's multi-actor environment. This version solves the problem by creating separate files for each actor.
 
-## How to Use
+## Installation
 
-### 1. Download and Compile
+### Basic Installation
 
 ```bash
 git clone https://github.com/rakuv3r/luacov-skynet.git
@@ -22,13 +22,21 @@ cd luacov-skynet
 gcc -shared -fPIC -o src/fileutil.so src/fileutil.c
 ```
 
-### 2. Add to Your Code
+### Performance Optimization (Optional)
+
+For better performance, install the C extension: [cluacov-skynet](https://github.com/rakuv3r/cluacov-skynet)
+
+luacov-skynet will automatically detect and use the high-performance version if available.
+
+## How to Use
+
+### 1. Add to Your Code
 
 ```lua
 require("luacov.tick")
 ```
 
-### 3. Run Your Program
+### 2. Run Your Program
 
 ```bash
 # Start coverage collection

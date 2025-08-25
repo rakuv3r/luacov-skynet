@@ -12,9 +12,9 @@
 
 原版 LuaCov 在 Skynet 的多 actor 环境中会出现数据冲突问题。这个版本通过为每个 actor 生成独立文件来解决这个问题。
 
-## 如何使用
+## 安装方法
 
-### 1. 下载和编译
+### 基础安装
 
 ```bash
 git clone https://github.com/rakuv3r/luacov-skynet.git
@@ -22,13 +22,21 @@ cd luacov-skynet
 gcc -shared -fPIC -o src/fileutil.so src/fileutil.c
 ```
 
-### 2. 在代码中添加
+### 性能优化（可选）
+
+如需更好的性能，可安装 C 语言扩展：[cluacov-skynet](https://github.com/rakuv3r/cluacov-skynet)
+
+luacov-skynet 会自动检测并使用高性能版本。
+
+## 如何使用
+
+### 1. 在代码中添加
 
 ```lua
 require("luacov.tick")
 ```
 
-### 3. 运行程序
+### 2. 运行程序
 
 ```bash
 # 启动覆盖率收集
