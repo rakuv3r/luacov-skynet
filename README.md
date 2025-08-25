@@ -2,9 +2,9 @@
     <h1>LuaCov-Skynet</h1>
     <img src="./docs/logo/luacov-skynet.png" width="487" alt=""/>
     <p>Code coverage tool for Skynet framework</p>
-    
-    [中文](docs/README-zh.md)
 </div>
+
+[中文](docs/README-zh.md)
 
 ## What is LuaCov-Skynet
 

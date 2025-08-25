@@ -2,9 +2,9 @@
     <h1>LuaCov-Skynet</h1>
     <img src="logo/luacov-skynet.png" width="487" alt=""/>
     <p>Skynet 代码覆盖率工具</p>
-    
-    [English](../README.md)
 </div>
+
+[English](../README.md)
 
 ## 什么是 LuaCov-Skynet
 
