@@ -6,7 +6,7 @@
 
 local runner = {}
 --- LuaCov version in `MAJOR.MINOR.PATCH` format.
-runner.version = "0.15.0"
+runner.version = "0.16.0"
 
 local skynet
 local fileutil
